@@ -17,7 +17,7 @@ async function fetchSteamGlobal(retries = 3) {
     console.log("스팀(한국) 최고 매출 데이터 가져오는 중...");
     for (let attempt = 1; attempt <= retries; attempt++) {
         try {
-            const res = await fetch("https://store.steampowered.com/search/results/?query&start=0&count=100&filter=topsellers&infinite=1&cc=kr", {
+            const res = await fetch("https://store.steampowered.com/search/results/?query&start=0&count=100&filter=topsellers&infinite=1&cc=kr&l=koreana", {
                 headers: {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
                 }
@@ -46,7 +46,7 @@ async function fetchSteamGlobal(retries = 3) {
                 await Promise.all(batch.map(async (game) => {
                     if (game.appId) {
                         try {
-                            const appRes = await fetch(`https://store.steampowered.com/api/appdetails?appids=${game.appId}&cc=kr`, {
+                            const appRes = await fetch(`https://store.steampowered.com/api/appdetails?appids=${game.appId}&cc=kr&l=koreana`, {
                                 headers: { 'User-Agent': 'Mozilla/5.0' }
                             });
                             const appData = await appRes.json();
