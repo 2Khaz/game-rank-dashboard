@@ -57,3 +57,10 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Notify Discord on Workflow Failure
+        if: failure()
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          curl -H "Content-Type: application/json" -X POST -d '{"content":"🚨 **[시스템 알림] 크롤링 로봇 작동 중 치명적 오류 발생!**\n깃허브 Actions 탭에서 어떤 부분에서 멈췄는지 확인해주세요."}' $DISCORD_WEBHOOK_URL
