@@ -151,28 +151,39 @@ function enrichDataWithRankAndStreak(currentList, platformName, previousData, st
     const previousRanks = {};
     if (previousData) {
         previousData.forEach((g, index) => {
-            const name = g.title || g.name;
-            previousRanks[name] = index + 1;
+            // [해결포인트 1번-1] 이름 대신 고유 번호(appId)를 사용해 어제 순위를 기억합니다.
+            const id = g.appId || g.title || g.name;
+            previousRanks[id] = index + 1;
         });
     }
 
     currentList.forEach((game, index) => {
-        const name = game.title || game.name;
+        // [해결포인트 1번-2] 오늘 순위 변동 계산 시에도 고유 번호(appId)를 기준으로 찾습니다.
+        const id = game.appId || game.title || game.name;
         const currentRank = index + 1;
         
-        if (previousRanks[name]) {
-            game.rankChange = previousRanks[name] - currentRank; // 양수면 상승, 음수면 하락
+        if (previousRanks[id]) {
+            game.rankChange = previousRanks[id] - currentRank; // 양수면 상승, 음수면 하락
         } else {
             game.rankChange = 'new'; // 새로 진입
         }
 
-        const streakKey = `${platformName}_${name}`;
-        if (streaks[streakKey]) {
-            streaks[streakKey] += 1;
-        } else {
-            streaks[streakKey] = 1;
+        // [해결포인트 1번-3] 기존 점수 마이그레이션 및 누적 로직
+        const newStreakKey = `${platformName}_${id}`;
+        const oldStreakKey = `${platformName}_${game.title || game.name}`;
+
+        // 혹시 단골 명단에 옛날 이름표(oldStreakKey)로 쌓은 점수가 있다면, 새 이름표(newStreakKey)로 고스란히 옮깁니다!
+        if (streaks[oldStreakKey] !== undefined && newStreakKey !== oldStreakKey) {
+            streaks[newStreakKey] = streaks[oldStreakKey];
+            delete streaks[oldStreakKey];
         }
-        game.streak = streaks[streakKey];
+
+        if (streaks[newStreakKey]) {
+            streaks[newStreakKey] += 1;
+        } else {
+            streaks[newStreakKey] = 1;
+        }
+        game.streak = streaks[newStreakKey];
     });
 
     return currentList;
@@ -180,8 +191,9 @@ function enrichDataWithRankAndStreak(currentList, platformName, previousData, st
 
 function cleanupStreaks(currentSteam, currentPlay, streaks) {
     const activeKeys = new Set();
-    currentSteam.forEach(g => activeKeys.add(`steam_${g.name}`));
-    currentPlay.forEach(g => activeKeys.add(`play_${g.title}`));
+    // [해결포인트 1번-4] 100위 밖으로 나간 게임들 점수를 지울 때도, 고유 번호(appId) 기준으로 확인합니다.
+    currentSteam.forEach(g => activeKeys.add(`steam_${g.appId || g.name}`));
+    currentPlay.forEach(g => activeKeys.add(`play_${g.appId || g.title}`));
 
     for (let key in streaks) {
         if (!activeKeys.has(key)) {
