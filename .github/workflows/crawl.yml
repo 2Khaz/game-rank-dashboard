@@ -23,7 +23,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24' # 👈 가장 안정적인 최신 LTS 버전으로 세팅 완료
+          node-version: '24'
 
       - name: Install Dependencies
         run: npm install
@@ -40,7 +40,7 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add data.json history/ game_streaks.json pending_sheets.json # 👈 엑셀 실패 대비 보관함 파일 추가
+          git add -A
           git diff --quiet && git diff --staged --quiet || git commit -m "🚀 Auto-update game rankings & history"
           git pull --rebase origin main || true
           git push
