@@ -1,0 +1,36 @@
+name: 🎨 빠른 화면 배포 (Deploy UI)
+
+on:
+  # 1. index.html 파일이 수정되어서 깃허브에 올라오면 자동으로 즉시 배포
+  push:
+    paths:
+      - 'index.html'
+  # 2. 깃허브 Actions 탭에서 수동으로 버튼을 눌러서 강제 배포 가능
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy-ui:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: 📥 코드 가져오기
+        uses: actions/checkout@v4
+
+      - name: ⚙️ 깃허브 Pages 설정
+        uses: actions/configure-pages@v4
+
+      - name: 📦 화면 파일 포장하기
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: 🚀 웹사이트에 쏘기 (배포)
+        id: deployment
+        uses: actions/deploy-pages@v4
