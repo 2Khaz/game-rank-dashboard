@@ -70,15 +70,15 @@ async function writePendingData() {
 
     for (let item of pendingQueue) {
         const { timestamp, steamGlobal, playKr } = item;
-        const sheetTitle = timestamp; // 기존 탭 이름 형식 유지 (예: 2026-06-26 10)
+        const sheetTitle = timestamp; // 기존 탭이름 규칙 동일 (예: 2026-06-26 10)
         
         try {
             let sheet = doc.sheetsByTitle[sheetTitle];
             
+            // 기존 시트가 없을 때만 새로 생성
             if (!sheet) {
                 console.log(`새 시트 생성 중: ${sheetTitle}`);
                 
-                // 엑셀 탭 순서(알파벳/날짜순) 정렬을 위한 위치 계산 로직
                 const titles = doc.sheetsByIndex.map(s => s.title);
                 titles.push(sheetTitle);
                 titles.sort(); // 오름차순 정렬
@@ -91,7 +91,6 @@ async function writePendingData() {
                     index: correctIndex
                 });
                 
-                // addSheet의 index 속성이 간혹 무시되는 경우를 대비해 확실하게 순서 강제 업데이트
                 await doc.loadInfo(); 
                 const currentSheet = doc.sheetsByTitle[sheetTitle];
                 if (currentSheet && currentSheet.index !== correctIndex) {
@@ -99,7 +98,8 @@ async function writePendingData() {
                 }
             }
 
-            await sheet.loadCells('A2:F101');
+            // [수정된 부분] 범위를 넉넉히 잡아서 에러 방지 후, 기존 데이터를 빈칸('')으로 깔끔하게 지우기
+            await sheet.loadCells('A1:F105');
             for(let c=0; c<6; c++) {
                 for(let r=1; r<=100; r++) {
                     const cell = sheet.getCell(r, c);
@@ -107,6 +107,7 @@ async function writePendingData() {
                 }
             }
 
+            // 새로운 데이터로 덮어쓰기
             const maxRows = Math.max(steamGlobal.length, playKr.length);
             for (let i = 0; i < maxRows; i++) {
                 const rowIdx = i + 1; 
@@ -132,13 +133,13 @@ async function writePendingData() {
         }
     }
 
-    // 성공한 데이터는 지워주고, 실패한 데이터만 남겨둠
+    // 성공한 데이터는 지워주고 실패한 데이터만 남김
     if (successCount > 0 || remainingQueue.length !== pendingQueue.length) {
         fs.writeFileSync(pendingFile, JSON.stringify(remainingQueue, null, 2), 'utf8');
     }
     
     if (successCount > 0) {
-        await sendDiscordAlert(`📥 **밀린 구글 시트 데이터 복구 완료!**\n총 ${successCount}건의 데이터가 성공적으로 구글 시트에 기록되었습니다.`);
+        await sendDiscordAlert(`✅ **밀린 구글 시트 데이터 복구 완료!**\n총 ${successCount}건의 데이터가 성공적으로 구글 시트에 기록되었습니다.`);
     }
 }
 
