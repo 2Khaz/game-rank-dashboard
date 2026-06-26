@@ -7,7 +7,7 @@ on:
 
 jobs:
   crawl-and-deploy:
-    runs-on: macos-latest # 👈 구글의 우분투/윈도우 IP 차단을 회피할 확률이 높은 맥 서버 사용
+    runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash 
