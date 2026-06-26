@@ -38,7 +38,8 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add -A
+          touch pending_sheets.json
+          git add pending_sheets.json
           git diff --quiet && git diff --staged --quiet || git commit -m "📥 밀린 구글 시트 데이터 반영 완료"
           git pull --rebase origin main || true
           git push
