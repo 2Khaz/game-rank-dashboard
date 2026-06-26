@@ -1,32 +1,47 @@
-name: 🛠️ Run Fix Script (임시 복구)
+name: 🛠️ Run Patch Script (장르 복구)
 
 on:
   workflow_dispatch: 
 
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
 jobs:
-  run-fix:
+  run-patch:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
-      - name: Checkout Repository
+      - name: 코드 가져오기
         uses: actions/checkout@v4
 
-          - name: Setup Node.js
+      - name: Node.js 세팅
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Install Dependencies
-        run: npm install   # <--- 이 줄이 반드시 필요합니다!
+      - name: 📦 필요 도구 설치 (npm install)
+        run: npm install
 
-      - name: Run script
+      - name: 🚀 패치 스크립트 실행
         run: node patch.js
 
-      - name: Commit and Push Changes
+      - name: 💾 결과 깃허브에 저장
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add data.json history/
-          git diff --quiet && git diff --staged --quiet || git commit -m "🔧 임시 픽스 스크립트 실행 (13시 삭제, 14시 롤백)"
+          git diff --quiet && git diff --staged --quiet || git commit -m "🔧 임시 장르 복구 패치 실행"
+          git pull --rebase origin main || true
           git push
+
+      - name: ⚙️ 깃허브 Pages 설정
+        uses: actions/configure-pages@v4
+
+      - name: 📦 화면 파일 포장
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.' 
+
+      - name: 🚀 대시보드 웹사이트에 배포 (새로고침)
+        uses: actions/deploy-pages@v4
