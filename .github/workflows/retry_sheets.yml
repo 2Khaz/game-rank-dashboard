@@ -1,5 +1,10 @@
 name: Retry Google Sheets Upload
 
+# [문제 1 해결] 동시성 제어: 워크플로우가 겹쳐 돌지 않도록 순차 큐잉 처리
+concurrency:
+  group: git-sync-queue
+  cancel-in-progress: false
+
 on:
   repository_dispatch:
     types: [trigger-retry]
@@ -11,6 +16,7 @@ jobs:
     defaults:
       run:
         shell: bash
+    # [권한 설정] 비워진 pending_sheets.json을 깃허브에 푸시할 수 있도록 쓰기 권한 부여
     permissions:
       contents: write 
       
@@ -24,7 +30,7 @@ jobs:
           node-version: '24'
 
       - name: Install Dependencies
-        run: npm install
+        run: npm install --omit=dev
 
       - name: Create credentials.json from Secret
         run: echo '${{ secrets.GCP_CREDENTIALS }}' > credentials.json
@@ -34,12 +40,10 @@ jobs:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: node retry_sheets.js
 
-      - name: Commit Updated pending_sheets.json
+      - name: Commit and Push Updated Pending Sheets
+        # [문제 1 해결] git push 전 git pull --rebase origin main을 실행해 커밋 충돌 완벽 방지
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          touch pending_sheets.json
           git add pending_sheets.json
-          git diff --quiet && git diff --staged --quiet || git commit -m "📥 밀린 구글 시트 데이터 반영 완료"
-          git pull --rebase origin main || true
-          git push
+          git diff --quiet && git diff --staged --quiet || (git commit -m "chore: clear pending_sheets after retry" && git pull --rebase origin main && git push)
