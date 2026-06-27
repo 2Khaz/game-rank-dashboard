@@ -12,13 +12,16 @@ on:
 
 jobs:
   retry-sheets:
-    runs-on: ubuntu-latest
+    # 🍏 [AI/봇 검열 우회 전략] 가상 서버 환경을 Mac(macos-latest)으로 전격 교체!
+    runs-on: macos-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     defaults:
       run:
         shell: bash
-    # [권한 설정] 비워진 pending_sheets.json을 깃허브에 푸시할 수 있도록 쓰기 권한 부여
     permissions:
       contents: write 
+      id-token: write
       
     steps:
       - name: Checkout Repository
@@ -30,20 +33,21 @@ jobs:
           node-version: '24'
 
       - name: Install Dependencies
-        run: npm install --omit=dev
+        run: npm install
 
       - name: Create credentials.json from Secret
         run: echo '${{ secrets.GCP_CREDENTIALS }}' > credentials.json
 
       - name: Run Retry Script
+        run: node retry_sheets.js
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-        run: node retry_sheets.js
 
       - name: Commit and Push Updated Pending Sheets
-        # [문제 1 해결] git push 전 git pull --rebase origin main을 실행해 커밋 충돌 완벽 방지
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add pending_sheets.json
-          git diff --quiet && git diff --staged --quiet || (git commit -m "chore: clear pending_sheets after retry" && git pull --rebase origin main && git push)
+          git diff --quiet && git diff --staged --quiet || git commit -m "🧹 Auto-clean pending_sheets.json after successful retry"
+          git pull --rebase origin main || true
+          git push
