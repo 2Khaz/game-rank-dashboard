@@ -34,7 +34,9 @@ jobs:
       - name: Run Crawler (Update Google Sheet & Local JSON)
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-        run: node crawler.js
+        run: |
+          curl -s https://www.googleapis.com > /dev/null || true # 🚀 소켓 사전 예열 단 한 줄 추가!!!
+          node crawler.js
 
       - name: Commit and Push Updated data.json
         run: |
