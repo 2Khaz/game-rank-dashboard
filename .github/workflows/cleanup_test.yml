@@ -1,0 +1,35 @@
+name: Rollback Test Data
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_time:
+        description: '지울 데이터 시간 (예: 2026-06-30_09)'
+        required: true
+        default: '2026-06-30_09'
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run Cleanup Script
+        run: node cleanup_test.js "${{ github.event.inputs.target_time }}"
+
+      - name: Commit and Push Rollback
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --quiet && git diff --staged --quiet || git commit -m "🧹 Rollback test data: ${{ github.event.inputs.target_time }}"
+          git pull --rebase origin main || true
+          git push
